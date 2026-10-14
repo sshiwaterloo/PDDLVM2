@@ -1,6 +1,8 @@
+import _bootstrap  # noqa: F401  (repo root on sys.path)
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # for 3D projection
+from pddlvm.plotting import save_or_show, show_requested
 
 def solve_burgers_split_step_dirichlet(
     nu=0.01,
@@ -189,7 +191,8 @@ def solve_burgers_split_step_dirichlet(
         plt.ylabel("u(x,T)")
         plt.grid(True)
         plt.legend()
-        plt.show()
+        save_or_show(plt.gcf(), "artifacts/burgers_spectral_u.png",
+                     show=show_requested())
 
     ############################################################################
     # 8. Plot 3D surface
@@ -206,7 +209,8 @@ def solve_burgers_split_step_dirichlet(
         ax.set_zlabel("u(x,t)")
         ax.set_title(f"Burgers Dirichlet BC, Nx={Nx}, ν={nu}")
         plt.tight_layout()
-        plt.show()
+        save_or_show(plt.gcf(), "artifacts/burgers_spectral_3d.png",
+                     show=show_requested())
 
     return x, u_final, u_snap, solution_history
 

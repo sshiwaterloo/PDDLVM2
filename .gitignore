@@ -1,0 +1,72 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Codewhale agent workspace
+.codewhale/
+
+# Local scratch
+.tmp/
+tmp/
+
+# Training artifacts
+runs/
+logs/
+mlruns/
+checkpoints/
+artifacts/
+figures/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Coverage / cache
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated API docs (regenerate with tools/build_docs.py)
+docs/api/
+
+# Editors
+.vscode/
+.idea/
+
+# M-line theory (research in progress, not part of the public release)
+docs/theory/
+docs/MATH_PLAN.md
+pddlvm/math/
+pddlvm/tests/test_math_m*.py
+
+# Internal process docs (engineering log / plans / handoff)
+docs/ENGINEERING_LOG.md
+docs/E9_PLAN.md
+docs/HANDOFF.md
+docs/CLOUD_PLAN.md
+docs/CLOUD_ENV.md
+RL_BRANCHING_NOTES.md
+
+# One-off diagnostic drivers
+tools/e94_*.py
+
+# Cloud orchestration scripts (cloud-specific, not part of the package)
+tools/cloud_*.sh
+tools/cloud_requirements.lock
+tools/e9_batch_launch.sh
+
+# Downloaded reference papers
+reference/reference_papers/

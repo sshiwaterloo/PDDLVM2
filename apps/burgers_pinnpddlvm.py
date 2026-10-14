@@ -11,6 +11,7 @@ Blocks:
 ##########################
 # Block 1: Environment Check
 ##########################
+import _bootstrap  # noqa: F401  (repo root on sys.path)
 import sys
 print(sys.executable)
 print(sys.path)
@@ -33,6 +34,9 @@ mpl.rcParams['axes.unicode_minus'] = False
 from pddlvm.utilities import tf as tfpddl, floatf, tffloat
 from pddlvm.VEModel import VE
 from pddlvm.NeuralNet import NeuralN
+from pddlvm.plotting import save_or_show
+
+SHOW = "--show" in sys.argv
 
 tf.random.set_seed(42)
 
@@ -277,7 +281,7 @@ plt.plot(np.arange(len(pde_elbo_log))*100, pde_elbo_log, marker='o')
 plt.xlabel("Iteration")
 plt.ylabel("PDE-Only ELBO")
 plt.title("PDE-Only PINN-PDDLVM (Blocks 1..8) Training")
-plt.show()
+save_or_show(plt.gcf(), "artifacts/burgers_pinnpddlvm_train1.png", show=SHOW)
 
 ##########################
 # Block 9: Plot PDE solution (Mean, +/-2 sigma) at t=0.5
@@ -309,7 +313,7 @@ plt.xlabel('x')
 plt.ylabel(f'u(x,{t_index})')
 plt.title("Block 9: PDE-Only solution slice at t=0.5 (ASCII label)")
 plt.legend()
-plt.show()
+save_or_show(plt.gcf(), "artifacts/burgers_pinnpddlvm_slice.png", show=SHOW)
 
 ##########################
 # Block 10: Save model weights
@@ -338,7 +342,7 @@ plt.plot(z_vals.numpy(), residual_map, marker='o')
 plt.xlabel('nu')
 plt.ylabel('PDE residual MSE')
 plt.title("Block 11: PDE Residual vs. param nu")
-plt.show()
+save_or_show(plt.gcf(), "artifacts/burgers_pinnpddlvm_residual.png", show=SHOW)
 
 ##########################
 # Block 12: 2D Heatmap PDE solution
@@ -356,7 +360,7 @@ plt.colorbar()
 plt.title("Block 12: PDE solution mean over (x,t)")
 plt.xlabel('x')
 plt.ylabel('t')
-plt.show()
+save_or_show(plt.gcf(), "artifacts/burgers_pinnpddlvm_mean.png", show=SHOW)
 
 ##########################
 # Block 13: Data-Driven Extension
@@ -511,7 +515,7 @@ plt.plot(np.arange(len(data_elbo_list))*100, data_elbo_list, marker='o')
 plt.xlabel("Iteration")
 plt.ylabel("Data-Driven ELBO")
 plt.title("Block 16: Data-Driven approach (observation to param) Training")
-plt.show()
+save_or_show(plt.gcf(), "artifacts/burgers_pinnpddlvm_train2.png", show=SHOW)
 
 ##########################
 # Block 17: Param Sweep
@@ -558,4 +562,4 @@ plt.xlabel("x")
 plt.ylabel("u(x,0.5)")
 plt.legend()
 plt.title("Block 18: PDE solutions at predicted param vs. true param")
-plt.show()
+save_or_show(plt.gcf(), "artifacts/burgers_pinnpddlvm_compare.png", show=SHOW)

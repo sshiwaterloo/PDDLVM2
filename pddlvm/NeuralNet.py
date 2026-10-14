@@ -1,8 +1,144 @@
 # NeuralNet.py
 # ------------
+import logging
+
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
+
+_logger = logging.getLogger(__name__)
+
+class ConvFieldNet(tf.keras.Model):
+    """Conv3D-transpose decoder: latent z -> 3D field with (mean, logvar).
+
+    A dense layer maps z to a coarse (2, 2, 2) cube of filters, which
+    ``Conv3DTranspose`` blocks (stride 2, 'same') upsample to
+    ``field_shape``, and a final Conv3D head outputs 2 * channels values
+    split into (mean, logvar) — the same output convention as ``NeuralN``.
+    Dense decoders are the wrong tool for 3D fields; this is the
+    decoder used for the 3D Navier-Stokes demos.
+
+    Parameters
+    ----------
+    name : str
+    z_dim : int
+    field_shape : (n, n, n) with n a power of two
+    channels : output field channels (1 scalar field, 3 for u, v, w)
+    base_filters : filters at the finest level (doubled per block upward)
+    init_seed : per-layer deterministic init seed (see NeuralN)
+    """
+
+    def __init__(self, name, z_dim, field_shape, channels=1, base_filters=16,
+                 init_seed=None, verbose=False):
+        super(ConvFieldNet, self).__init__()
+        self.NN_name = name
+        self.field_shape = tuple(int(s) for s in field_shape)
+        self.channels = int(channels)
+        self.verbose = verbose
+        self.init_seed = init_seed
+        n = self.field_shape[0]
+        if n & (n - 1):
+            raise ValueError("field_shape[0] must be a power of two")
+        self.levels = int(np.log2(n)) - 1  # 2 -> n via stride-2 blocks
+        self.start_filters = int(base_filters) * (2 ** self.levels)
+
+        def initializer(layer_index):
+            if init_seed is None:
+                return tf.keras.initializers.HeNormal()
+            return tf.keras.initializers.HeNormal(
+                seed=int(init_seed) + 1000 * int(layer_index))
+
+        self.dense = keras.layers.Dense(
+            8 * self.start_filters, kernel_initializer=initializer(0),
+            name=f"{name}_dense")
+        self.blocks = []
+        filters = self.start_filters
+        for i in range(self.levels):
+            filters = max(filters // 2, int(base_filters))
+            self.blocks.append(keras.layers.Conv3DTranspose(
+                filters, kernel_size=3, strides=2, padding="same",
+                activation="swish", kernel_initializer=initializer(1 + i)))
+        self.head = keras.layers.Conv3D(
+            2 * self.channels, kernel_size=3, padding="same",
+            kernel_initializer=initializer(1 + self.levels))
+
+    def Map(self, z):
+        """z ([batch, z_dim] or a list thereof) -> (mean, logvar), each
+        [batch, n, n, n, channels]."""
+        if not isinstance(z, (list, tuple)):
+            z = [z]
+        flat = tf.concat([tf.reshape(v, [tf.shape(v)[0], -1]) for v in z],
+                         axis=1)
+        h = self.dense(flat)
+        h = tf.reshape(h, [-1, 2, 2, 2, self.start_filters])
+        for blk in self.blocks:
+            h = blk(h)
+        out = self.head(h)
+        mean = out[..., :self.channels]
+        logvar = out[..., self.channels:]
+        return mean, logvar
+
+
+class ConvFieldNet2D(tf.keras.Model):
+    """Conv2D-transpose decoder: latent z -> 2D field with (mean, logvar).
+
+    The 2D analogue of ``ConvFieldNet`` (used for the cylinder-flow demo).  A
+    dense layer maps z to a coarse (2, 2) patch of filters, which
+    ``Conv2DTranspose`` blocks (stride 2, 'same') upsample to ``field_shape``,
+    and a final Conv2D head outputs 2 * channels values split into
+    (mean, logvar) -- the same output convention as ``NeuralN``/``ConvFieldNet``.
+    """
+
+    def __init__(self, name, z_dim, field_shape, channels=1, base_filters=16,
+                 init_seed=None, verbose=False):
+        super(ConvFieldNet2D, self).__init__()
+        self.NN_name = name
+        self.field_shape = tuple(int(s) for s in field_shape)
+        self.channels = int(channels)
+        self.verbose = verbose
+        self.init_seed = init_seed
+        n = self.field_shape[0]
+        if n & (n - 1):
+            raise ValueError("field_shape[0] must be a power of two")
+        self.levels = int(np.log2(n)) - 1  # 2 -> n via stride-2 blocks
+        self.start_filters = int(base_filters) * (2 ** self.levels)
+
+        def initializer(layer_index):
+            if init_seed is None:
+                return tf.keras.initializers.HeNormal()
+            return tf.keras.initializers.HeNormal(
+                seed=int(init_seed) + 1000 * int(layer_index))
+
+        self.dense = keras.layers.Dense(
+            4 * self.start_filters, kernel_initializer=initializer(0),
+            name=f"{name}_dense")
+        self.blocks = []
+        filters = self.start_filters
+        for i in range(self.levels):
+            filters = max(filters // 2, int(base_filters))
+            self.blocks.append(keras.layers.Conv2DTranspose(
+                filters, kernel_size=3, strides=2, padding="same",
+                activation="swish", kernel_initializer=initializer(1 + i)))
+        self.head = keras.layers.Conv2D(
+            2 * self.channels, kernel_size=3, padding="same",
+            kernel_initializer=initializer(1 + self.levels))
+
+    def Map(self, z):
+        """z ([batch, z_dim] or a list thereof) -> (mean, logvar), each
+        [batch, ny, nx, channels]."""
+        if not isinstance(z, (list, tuple)):
+            z = [z]
+        flat = tf.concat([tf.reshape(v, [tf.shape(v)[0], -1]) for v in z],
+                         axis=1)
+        h = self.dense(flat)
+        h = tf.reshape(h, [-1, 2, 2, self.start_filters])
+        for blk in self.blocks:
+            h = blk(h)
+        out = self.head(h)
+        mean = out[..., :self.channels]
+        logvar = out[..., self.channels:]
+        return mean, logvar
+
 
 class NeuralN(tf.keras.Model):
     """
@@ -42,7 +178,8 @@ class NeuralN(tf.keras.Model):
     which are interpreted as (mean, logvar).
     """
 
-    def __init__(self, name, layout, transf=None, multOutputLayout=None):
+    def __init__(self, name, layout, transf=None, multOutputLayout=None,
+                 verbose=False, init_seed=None):
         """
         Initializes the NeuralN class.
 
@@ -58,6 +195,15 @@ class NeuralN(tf.keras.Model):
             Function applied to input. If None, the identity transform is used.
         multOutputLayout : Any
             Placeholder for multi-output expansions; not utilized.
+        verbose : bool
+            If True, print the Keras layer summary at construction time.
+        init_seed : int or None
+            Base seed for weight initialization.  When set, each layer gets
+            a deterministic per-layer seed (base + offset), so two networks
+            built with the same ``init_seed`` have identical initial
+            weights -- required for reproducible experiments (keras
+            initializers without an explicit seed are NOT reproducible
+            across constructions, even after tf.random.set_seed).
         """
         super(NeuralN, self).__init__()
         self.NN_name = name
@@ -66,6 +212,7 @@ class NeuralN(tf.keras.Model):
 
         self.activation = 'swish'
         self.initializer = tf.keras.initializers.HeNormal()
+        self.init_seed = init_seed
 
         self.lower_alpha = tf.constant(1e-6, dtype=tf.float32)
         self.upper_w = tf.constant(1.0, dtype=tf.float32)
@@ -79,49 +226,52 @@ class NeuralN(tf.keras.Model):
         else:
             self.transf_forward = transf
 
+        self.verbose = verbose
         self.initialize()
 
     def initialize(self):
         """
         Builds the internal Keras Sequential model according to `layout`.
         The final Dense layer outputs 2 * (layout[-1]) units, split into (mean, logvar).
-        Prints a summary of the constructed layers.
+        Prints a summary of the constructed layers when ``verbose`` is set.
         """
         self.NN = keras.Sequential(name=self.NN_name)
 
         # Build hidden layers based on layout
         for i in range(1, self.layout.shape[0] - 1):
-            if i == 1:
-                print('first layer')
-                self.NN.add(
-                    self.hiddenLayerType(
-                        self.layout[i],
-                        activation=self.activation,
-                        kernel_initializer=self.initializer
-                    )
+            _logger.debug('adding hidden layer %d of %s', i, self.NN_name)
+            initializer = self._layer_initializer(i)
+            self.NN.add(
+                self.hiddenLayerType(
+                    int(self.layout[i]),
+                    activation=self.activation,
+                    kernel_initializer=initializer
                 )
-            else:
-                print('inner layer ', i)
-                self.NN.add(
-                    self.hiddenLayerType(
-                        self.layout[i],
-                        activation=self.activation,
-                        kernel_initializer=self.initializer
-                    )
-                )
+            )
 
-        print('last layer')
+        _logger.debug('adding final layer of %s', self.NN_name)
         # Final layer => produce 2 * (layout[-1]) => (mean, logvar)
         self.NN.add(
-            keras.layers.Dense(self.layout[-1] * 2)
+            keras.layers.Dense(int(self.layout[-1]) * 2,
+                               kernel_initializer=self._layer_initializer(
+                                   self.layout.shape[0]))
         )
 
         # Explicitly build with a known input shape => (None, layout[0]) for summary
-        input_dim = self.layout[0]
+        input_dim = int(self.layout[0])
         self.NN.build((None, input_dim))
 
         # Print model summary
-        self.NN.summary()
+        if self.verbose:
+            self.NN.summary()
+
+    def _layer_initializer(self, layer_index):
+        """Initializer for a layer: unseeded, or deterministic per-layer
+        seed derived from ``init_seed``."""
+        if self.init_seed is None:
+            return self.initializer
+        return tf.keras.initializers.HeNormal(
+            seed=int(self.init_seed) + 1000 * int(layer_index))
 
     def Map(self, varIn):
         """

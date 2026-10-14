@@ -1,374 +1,171 @@
-"""
-burgers_pddlvm.py
------------------
-Demonstration of a purely PDDLVM-based 1D Burgers solver that compares
-the PDDLVM solution against a deterministic explicit finite-difference
-solver at a specified snapshot time. Both solutions are plotted for
-visual inspection.
+"""burgers_pddlvm.py — time-dependent PDDLVM for 1D Burgers.
+
+The PDDLVM here is genuinely time-dependent: the forward network maps a
+latent z to a full space-time field u(x, t) on a grid, and the physics
+likelihood is the space-time residual
+
+    u_t + u u_x - nu u_xx = 0          (interior points)
+    u(x, 0) = -sin(pi x)               (initial condition)
+    u(-1, t) = u(1, t) = 0             (boundary conditions)
+
+built from pddlvm.numerics.fd.burgers_space_time_residual_tf (verified by
+MMS in pddlvm.tests.test_numerics.TestBurgersSpaceTime).  The reference
+solution is the transient theta-IMEX solver from pddlvm.numerics.fd, so the
+final comparison is between two time-dependent solvers of the SAME physics
+(the legacy steady-vs-transient inconsistency is gone).
 
 Steps:
-1) Defines the PDE residual for a steady Burgers equation (u * u_x - nu u_xx = 0).
-2) Builds PDDLVM forward and inverse networks using NeuralNet.py.
-3) Trains the PDDLVM to minimize the PDE residual plus a latent-variable prior.
-4) Calls the explicit finite-difference solver solve_burgers_explicit_fd to obtain
-   a deterministic solution snapshot, and compares it with the trained PDDLVM output.
+1) Build forward (z -> u(x,t)) and inverse (u -> z) networks.
+2) Train with the prior-mode ELBO: physics residual likelihood + beta
+   prior + standard normal prior on z - alpha entropy term.
+3) Compare the learned mean field at t_snap against the transient FD
+   reference; save figures instead of blocking on plt.show().
 """
 
+import _bootstrap  # noqa: F401  (repo root on sys.path)
 import sys
-print(sys.executable)
-print(sys.path)
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-import numpy as np
 import matplotlib.pyplot as plt
 
-import matplotlib as mpl
-mpl.rcParams['text.usetex'] = False
-mpl.rcParams['axes.unicode_minus'] = False
-
-tf.random.set_seed(2025)
-
 from pddlvm.NeuralNet import NeuralN
+from pddlvm.numerics.fd import (
+    burgers_space_time_residual_tf,
+    solve_burgers_transient,
+)
+from pddlvm.probabilistic import (
+    Trainer,
+    build_dataset,
+    combine_terms,
+    diag_gaussian_log_prob,
+    gaussian_residual_log_likelihood,
+    reparameterize,
+)
+from pddlvm.plotting import save_or_show
 
-def solve_burgers_explicit_fd(
-    nu=0.01,
-    Nx=201,
-    T=1.0,
-    t_snap=0.5,
-    plot_result=True
-):
-    """
-    Solves the 1D viscous Burgers' equation using an explicit finite-difference scheme.
+SHOW = "--show" in sys.argv
 
-    This function solves the PDE:
-        ∂u/∂t + u (∂u/∂x) - ν (∂²u/∂x²) = 0
-    on the domain x ∈ [-1, 1], t ∈ [0, T], subject to Dirichlet boundary conditions
-    u(-1, t) = u(1, t) = 0 and an initial condition u(x, 0) = -sin(πx).
-
-    A uniform spatial mesh of Nx points is used. Time integration is performed using
-    a forward Euler scheme (explicit), with central differences in space for both
-    the first and second derivatives. The function returns the mesh points x,
-    the final solution u(x, T), and an additional snapshot of the solution u(x, t_snap).
-
-    Parameters
-    ----------
-    nu : float
-        Viscosity parameter.
-    Nx : int
-        Number of spatial grid points (including boundaries).
-    T : float
-        Final time to which the PDE is integrated.
-    t_snap : float
-        Time in [0, T] at which a snapshot of the solution is returned.
-    plot_result : bool
-        If True, plots the final solution u(x, T).
-
-    Returns
-    -------
-    x : ndarray
-        1D array of spatial grid points of shape (Nx,).
-    u_final : ndarray
-        The numerical solution at time t = T, of shape (Nx,).
-    u_snap : ndarray
-        The numerical solution at time t_snap, of shape (Nx,).
-
-    Notes
-    -----
-    - The spatial domain is discretized from x = -1.0 to x = 1.0 with Nx points,
-      so the grid spacing is dx = 2 / (Nx - 1).
-    - The time step dt is automatically adjusted so that the final time T
-      is reached exactly in Nsteps steps.
-    - Boundary conditions u(0) = u(Nx-1) = 0 are enforced at each time step.
-    - The solution is stored at each iteration for returning the snapshot
-      at t_snap (the nearest time step is used; no interpolation is performed).
-    """
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    x = np.linspace(-1.0, 1.0, Nx)
-    dx = x[1] - x[0]
-
-    dt_est = 0.4 * min(dx / 1.0, dx**2 / nu)  # crude guess for stable dt
-    Nsteps = int(np.ceil(T / dt_est))
-    dt = T / Nsteps
-
-    solution_history = np.zeros((Nsteps + 1, Nx))
-
-    # Initial condition
-    u = -np.sin(np.pi * x)
-    u[0] = 0.0
-    u[-1] = 0.0
-    solution_history[0, :] = u
-
-    for n in range(Nsteps):
-        u_old = u.copy()
-
-        for j in range(1, Nx - 1):
-            ux = (u_old[j + 1] - u_old[j - 1]) / (2.0 * dx)
-            uxx = (u_old[j + 1] - 2.0 * u_old[j] + u_old[j - 1]) / (dx**2)
-            u[j] = u_old[j] - dt * (u_old[j] * ux) + nu * dt * uxx
-
-        u[0] = 0.0
-        u[-1] = 0.0
-        solution_history[n + 1, :] = u
-
-    snap_index = int(round(t_snap / dt))
-    snap_index = max(0, min(snap_index, Nsteps))
-    u_snap = solution_history[snap_index, :].copy()
-    u_final = solution_history[-1, :].copy()
-
-    if plot_result:
-        plt.figure(figsize=(6, 4))
-        plt.plot(x, u_final, 'b-', label=f'u(x, T={T})')
-        plt.title(f'Viscous Burgers (Explicit FD), T={T}, Nx={Nx}, nu={nu}')
-        plt.xlabel('x')
-        plt.ylabel('u(x,T)')
-        plt.grid(True)
-        plt.legend()
-        plt.show()
-
-    return x, u_final, u_snap
-
-Lx = 1.0
-nu = 0.01
-Ncol = 50
-
-x_cols_np = np.linspace(0.0, Lx, Ncol)
-x_cols = tf.constant(x_cols_np, dtype=tf.float32)
-
-def initial_condition(x):
-    """
-    Provides an initial condition for the steady Burgers approach.
-
-    Parameters
-    ----------
-    x : tf.Tensor
-        One-dimensional spatial coordinate array.
-
-    Returns
-    -------
-    tf.Tensor
-        The initial condition, -sin(πx).
-    """
-    return -tf.math.sin(np.pi * x)
-
-@tf.function
-def pde_residual_tf(u_batch, x, nu):
-    """
-    Computes the PDE residual for a steady Burgers equation in 1D:
-    PDE = u * u_x - nu * u_xx = 0, with boundary conditions at x=0 and x=1.
-
-    Parameters
-    ----------
-    u_batch : tf.Tensor
-        Shape (batch, Ncol). Each row represents a candidate solution u(x).
-    x : tf.Tensor
-        Shape (Ncol,). Spatial grid points in [0, Lx].
-    nu : float
-        Viscosity parameter.
-
-    Returns
-    -------
-    tf.Tensor
-        Shape (batch, Ncol). PDE residual, with boundary constraints appended
-        at columns 0 and -1.
-    """
-    r = tf.zeros_like(u_batch)
-    h = x[1] - x[0]
-
-    u_im1 = u_batch[:, :-2]
-    u_i   = u_batch[:, 1:-1]
-    u_ip1 = u_batch[:, 2:]
-
-    u_x   = (u_ip1 - u_im1) / (2.0 * h)
-    u_xx  = (u_ip1 - 2.0 * u_i + u_im1) / (h * h)
-    pde_interior = u_i * u_x - nu * u_xx
-
-    bc_left  = tf.reshape(u_batch[:, 0]  - initial_condition(x[0]),  [-1, 1])
-    bc_right = tf.reshape(u_batch[:, -1] - initial_condition(x[-1]), [-1, 1])
-
-    r_cat = tf.concat([bc_left, pde_interior, bc_right], axis=1)
-    return r_cat
-
-z_dim = 2
-forward_layout = np.array([z_dim, 128, 128, Ncol])
-ForwardNet = NeuralN("ForwardNet", forward_layout)
-
-inverse_layout = np.array([Ncol, 64, 64, z_dim])
-InverseNet = NeuralN("InverseNet", inverse_layout)
-
-sigma_r = 1e-4
-optimizer = tf.keras.optimizers.Adam(1e-3)
 tfd = tfp.distributions
 
-def prior_z(batch_size):
-    """
-    Draws samples from a standard normal distribution in z_dim dimensions.
 
-    Parameters
-    ----------
-    batch_size : int
-        Number of latent samples to generate.
+def build_problem(nx=51, nt=21, nu=0.01, t_max=1.0, z_dim=2, sigma_r=1e-2,
+                  seed=2025):
+    """Space-time Burgers problem: grids, residual operator, networks."""
+    tf.random.set_seed(seed)
+    np.random.seed(seed)
 
-    Returns
-    -------
-    tf.Tensor
-        Shape (batch_size, z_dim). Each row is a sample from N(0,I).
-    """
-    return tf.random.normal(shape=(batch_size, z_dim))
+    x = np.linspace(-1.0, 1.0, nx)
+    t = np.linspace(0.0, t_max, nt)
+    x_tf = tf.constant(x, tf.float32)
+    t_tf = tf.constant(t, tf.float32)
 
-def log_diag_gaussian(sample, mean, logvar):
-    """
-    Computes the log probability under a diagonal Gaussian:
-    N(sample; mean, exp(logvar)).
+    def ic(xv):
+        return -tf.math.sin(np.pi * xv)
 
-    Parameters
-    ----------
-    sample : tf.Tensor
-        Shape (batch, dim).
-    mean : tf.Tensor
-        Shape (batch, dim). The Gaussian mean.
-    logvar : tf.Tensor
-        Shape (batch, dim). The log-variance.
+    n_total = nx * nt
+    forward = NeuralN("ForwardNet", np.array([z_dim, 128, 128, n_total]),
+                      init_seed=seed)
+    inverse = NeuralN("InverseNet", np.array([n_total, 64, 64, z_dim]),
+                      init_seed=seed + 1)
 
-    Returns
-    -------
-    tf.Tensor
-        Shape (batch,). The log probability for each batch sample.
-    """
-    log2pi = tf.math.log(2.0 * np.pi)
-    return tf.reduce_sum(
-        -0.5 * ((sample - mean)**2 * tf.exp(-logvar) + logvar + log2pi),
-        axis=1
-    )
+    def physics_residual(u_grid):
+        # u_grid: [batch, Nt, Nx]
+        return tf.vectorized_map(
+            lambda ug: burgers_space_time_residual_tf(
+                ug, x_tf, t_tf, nu, ic_fn=ic, bc_left=0.0, bc_right=0.0),
+            u_grid)
 
-def log_prior_z(z):
-    """
-    Evaluates the standard normal log prior on z.
+    return {
+        "x": x, "t": t, "nu": nu, "z_dim": z_dim, "sigma_r": sigma_r,
+        "n_total": n_total, "nx": nx, "nt": nt,
+        "forward": forward, "inverse": inverse,
+        "residual_fn": physics_residual,
+    }
 
-    Parameters
-    ----------
-    z : tf.Tensor
-        Shape (batch, z_dim). The latent variable.
 
-    Returns
-    -------
-    tf.Tensor
-        Shape (batch,). log N(z; 0,I) for each batch row.
-    """
-    log2pi = tf.math.log(2.0 * np.pi)
-    return tf.reduce_sum(-0.5 * (z**2 + log2pi), axis=1)
+def make_forward(batch_size, p):
+    """Prior-mode ELBO forward: sample z, generate u(x,t), evaluate physics."""
 
-@tf.function
-def train_step_pddlvm(batch_size=16):
-    """
-    Performs one training iteration of the PDDLVM approach for the Burgers PDE.
+    def forward(batch):
+        z = tf.random.normal([batch_size, p["z_dim"]])
+        mean_u, logvar_u = p["forward"].Map([z])
+        u_flat = reparameterize(mean_u, logvar_u)
+        u_grid = tf.reshape(u_flat, [batch_size, p["nt"], p["nx"]])
 
-    1) Samples latent z ~ N(0,I).
-    2) Maps z -> (mean_u, logvar_u), reparameterizes to obtain u_samp.
-    3) Computes PDE residual r_samp => log likelihood logp_r.
-    4) Computes inverse net p_beta(z|u_samp) => logp_beta, plus prior logp_z.
-    5) Sums to get ELBO => logp_r + logp_beta + logp_z, which is maximized.
+        r = p["residual_fn"](u_grid)  # [batch, n_res]
+        logp_r = gaussian_residual_log_likelihood(r, p["sigma_r"])
 
-    Parameters
-    ----------
-    batch_size : int
-        Number of latent samples in this mini-batch.
+        mean_b, logvar_b = p["inverse"].Map([u_flat])
+        logp_beta = diag_gaussian_log_prob(z, mean_b, logvar_b)
 
-    Returns
-    -------
-    tf.Tensor
-        The ELBO (negative of the computed loss).
-    """
-    with tf.GradientTape() as tape:
-        z_samp = prior_z(batch_size)
-        mean_u, logvar_u = ForwardNet.Map([z_samp])
-        eps = tf.random.normal(shape=mean_u.shape, dtype=tf.float32)
-        u_samp = mean_u + tf.exp(0.5 * logvar_u) * eps
+        logp_z = diag_gaussian_log_prob(z, tf.zeros_like(z),
+                                        tf.zeros_like(z))
+        logq_alpha = diag_gaussian_log_prob(u_flat, mean_u, logvar_u)
 
-        r_samp = pde_residual_tf(u_samp, x_cols, nu)
-        logp_r = -0.5 * tf.reduce_sum(r_samp**2, axis=1) / (sigma_r**2) \
-                 - 0.5 * Ncol * tf.math.log(2.0 * np.pi * (sigma_r**2))
+        return combine_terms(logp_r, logp_beta + logp_z, logq_alpha)
 
-        mean_b, logvar_b = InverseNet.Map([u_samp])
-        logp_beta = log_diag_gaussian(z_samp, mean_b, logvar_b)
-        logp_z = log_prior_z(z_samp)
+    return forward
 
-        elbo_samp = logp_r + logp_beta + logp_z
-        elbo = tf.reduce_mean(elbo_samp)
-        loss = -elbo
 
-    grads = tape.gradient(loss, ForwardNet.trainable_variables + InverseNet.trainable_variables)
-    optimizer.apply_gradients(zip(grads, ForwardNet.trainable_variables + InverseNet.trainable_variables))
-    return elbo
+def reference_solution(p, t_snap=0.5):
+    """Transient FD reference for the same IC/BC/nu on x in [-1, 1]."""
+    x = p["x"]
+    u0 = -np.sin(np.pi * x)
+    u0[0] = u0[-1] = 0.0
+    dx = x[1] - x[0]
+    dt = 0.9 * dx / max(1.0, np.max(np.abs(u0)))
+    u_final, t_hist, u_hist = solve_burgers_transient(
+        x, u0, nu=p["nu"], source=lambda xx, t: np.zeros_like(xx),
+        t0=0.0, t1=p["t"][-1], dt=dt, bc_left=0.0, bc_right=0.0)
+    u_snap = np.array([np.interp(t_snap, t_hist, [uu[i] for uu in u_hist])
+                       for i in range(len(x))])
+    return u_snap
 
-def main_train():
-    """
-    Executes the main PDDLVM training loop for a predetermined number of iterations.
-    Plots the ELBO history over training steps.
 
-    Returns
-    -------
-    list of float
-        A record of ELBO values at logging intervals.
-    """
-    nIter = 1000
-    elbo_log = []
-    for it in range(nIter):
-        e = train_step_pddlvm(16)
-        if it % 100 == 0:
-            print(f"Iter={it}, ELBO={e.numpy():.4f}")
-            elbo_log.append(e.numpy())
+def main():
+    p = build_problem()
+    steps = 1500 if "--quick" not in sys.argv else 150
+    lr = 1e-3
+    batch_size = 16
+    variables = (p["forward"].trainable_variables
+                 + p["inverse"].trainable_variables)
+    optimizer = tf.keras.optimizers.Adam(lr)
+    trainer = Trainer(make_forward(batch_size, p), variables, optimizer)
+    dummy = build_dataset(tf.zeros((1, 1)), batch_size=1,
+                          shuffle=False).repeat()
+    history = trainer.fit(dummy, steps=steps, log_every=250)
+    print(f"steps={steps}: nelbo {history['nelbo'][0]:.2f} -> "
+          f"{history['nelbo'][-1]:.2f}")
 
-    plt.figure()
-    plt.plot(np.arange(len(elbo_log)) * 100, elbo_log, 'o-')
-    plt.xlabel("Iteration")
-    plt.ylabel("ELBO (PDDLVM + Burgers PDE)")
-    plt.title("1D Burgers PDE with PDDLVM approach + NeuralNet.py")
-    plt.show()
+    # learned mean field at the snapshot time (nearest grid level)
+    t_snap = 0.5
+    k_snap = int(np.argmin(np.abs(p["t"] - t_snap)))
+    z0 = tf.zeros((1, p["z_dim"]))
+    mean_u, _ = p["forward"].Map([z0])
+    u_learned = mean_u.numpy().reshape(p["nt"], p["nx"])[k_snap, :]
 
-    return elbo_log
+    u_ref = reference_solution(p, t_snap=t_snap)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+    ax1.plot(p["x"], u_learned, "r-", label="PDDLVM mean u(x, t=0.5)")
+    ax1.plot(p["x"], u_ref, "b--", label="theta-IMEX FD reference")
+    ax1.plot(p["x"], -np.sin(np.pi * p["x"]), "k:", label="initial condition")
+    ax1.set_title("same physics: time-dependent PDDLVM vs FD")
+    ax1.legend()
+    ax1.grid(True)
+
+    ax2.plot(history["step"], history["nelbo"], label="NELBO")
+    ax2.plot(history["step"], history["log_likelihood"],
+             label="physics log-likelihood")
+    ax2.set_title("training")
+    ax2.legend()
+    ax2.grid(True)
+    save_or_show(fig, "artifacts/burgers_pddlvm_spacetime.png", show=SHOW)
+    print(f"||u_learned - u_ref||_inf at t={t_snap}: "
+          f"{np.max(np.abs(u_learned - u_ref)):.3e}")
+
 
 if __name__ == "__main__":
-
-    # 1) Run training
-    elbo_log = main_train()
-
-    # 2) Call explicit FD solver to get snapshot
-    from_burgers_x, from_burgers_final, from_burgers_snap = solve_burgers_explicit_fd(
-        nu=0.01,
-        Nx=201,
-        T=1.0,
-        t_snap=0.5,
-        plot_result=False  # turn off auto-plot
-    )
-
-    # 3) Compare final solution vs FD snapshot
-    # We'll sample a zero-latent for demonstration
-    z_test = tf.zeros((1, z_dim), dtype=tf.float32)
-    mean_u_test, logvar_u_test = ForwardNet.Map([z_test])
-    u_pred_np = mean_u_test[0].numpy()  # shape=(Ncol,)
-
-    # For plotting, resample the FD solution onto x_cols_np or do a rough comparison
-    # We'll just do a direct comparison by plotting them separately,
-    # acknowledging the two different grids (Ncol vs Nx=201).
-    # For a fair comparison, upsample or interpolate from FD's x domain to x_cols_np or vice versa.
-    # We'll do a naive approach => for demonstration only.
-
-    # Quick interpolation of from_burgers_snap onto x_cols_np
-    from scipy.interpolate import interp1d
-    f_snap = interp1d(from_burgers_x, from_burgers_snap, kind='cubic')
-    snap_on_pddlvm_grid = f_snap(x_cols_np)  # shape=(Ncol,)
-
-    # Also get the initial condition for reference
-    x_tf = tf.constant(x_cols_np, dtype=tf.float32)
-    u_init_np = initial_condition(x_tf).numpy()
-
-    plt.figure()
-    plt.plot(x_cols_np, u_pred_np, 'r-', label=f'PDDLVM solution (sigma={sigma_r}, t=0.5)')
-    plt.plot(x_cols_np, u_init_np, 'k--', label='initial condition')
-    plt.plot(x_cols_np, snap_on_pddlvm_grid, 'b-', label='Explicit FD snapshot(t=0.5)')
-    plt.title("Compare PDDLVM solution vs. FD snapshot\nBurgers PDE at t=0.5")
-    plt.legend()
-    plt.show()
+    main()

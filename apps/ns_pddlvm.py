@@ -9,8 +9,14 @@ This script illustrates:
 2) Construction of an inverse network that maps vorticity fields back to latent variables.
 3) A training loop that treats PDE residual as a Gaussian likelihood for residual=0, plus a prior on z.
 4) Comparison of the final predicted vorticity with a reference solution from a spectral solver.
+
+WARNING (physics consistency): the residual trained here is the *steady*
+vorticity equation (no d/dt term), while ns_spectral returns a
+*time-dependent* snapshot at t_snap.  The side-by-side plot below is a
+sanity check only.
 """
 
+import _bootstrap  # noqa: F401  (repo root on sys.path)
 import sys
 print(sys.executable)
 print(sys.path)
@@ -23,6 +29,10 @@ mpl.rcParams["axes.unicode_minus"] = False
 
 import tensorflow as tf
 import tensorflow_probability as tfp
+
+from pddlvm.plotting import save_or_show
+
+SHOW = "--show" in sys.argv
 
 tf.random.set_seed(2025)
 
@@ -325,12 +335,14 @@ plt.plot(np.arange(len(elbo_log))*50, elbo_log, 'o-')
 plt.xlabel("Iteration")
 plt.ylabel("log-ELBO")
 plt.title(f"2D Navier–Stokes PDE with PDDLVM - Demo (time snapshot={t_snap})")
-plt.show()
+save_or_show(plt.gcf(), "artifacts/ns_pddlvm_train.png", show=SHOW)
 
 
 ##########################
 # 4) Ground truth from ns_spectral => w(t_snap) & velocity
 ##########################
+print("WARNING: steady PDDLVM residual vs transient spectral snapshot -- "
+      "different physics; comparison is a sanity check only.")
 w0 = np.zeros((ny, nx), dtype=np.float64)
 dt = 0.001
 w_gt, ux_gt, uy_gt = ns_spectral_solve(
@@ -364,6 +376,6 @@ im1 = ax[1].contourf(w_pred_np, 50, cmap='jet')
 ax[1].set_title(f"PDDLVM mean w(x,y) at t={t_snap}")
 plt.colorbar(im1, ax=ax[1])
 plt.tight_layout()
-plt.show()
+save_or_show(plt.gcf(), "artifacts/ns_pddlvm_compare.png", show=SHOW)
 
 # Additional velocity comparisons can be added if the model is extended to produce velocity fields.

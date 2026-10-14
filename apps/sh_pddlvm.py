@@ -12,8 +12,14 @@ Usage:
   1) python sh_pddlvm.py
   2) Trains a PDDLVM for a 2D domain, then calls `sh_spectral.py` to obtain a ground-truth snapshot at t_snap
   3) Displays side-by-side plots of ground-truth and predicted solutions
+
+WARNING (physics consistency): the PDE residual here is the *steady*
+Swift-Hohenberg operator (the time derivative is dropped), while
+`sh_spectral` integrates the *time-dependent* equation to t_snap.  The
+side-by-side comparison is a sanity check only.
 """
 
+import _bootstrap  # noqa: F401  (repo root on sys.path)
 import sys
 print(sys.executable)
 print(sys.path)
@@ -53,6 +59,9 @@ nTotal = Nx * Ny
 z_dim  = 8
 
 from pddlvm.NeuralNet import NeuralN
+from pddlvm.plotting import save_or_show
+
+SHOW = "--show" in sys.argv
 
 layout_forward = np.array([z_dim, 128, 128, nTotal])
 ForwardNet = NeuralN("ForwardNet", layout_forward)
@@ -284,10 +293,12 @@ plt.plot(np.arange(len(elbo_log))*100, elbo_log, 'o-')
 plt.xlabel("Iteration")
 plt.ylabel("log-ELBO")
 plt.title(f"Swift-Hohenberg PDE with PDDLVM - Demo (time snapshot={t_snap})")
-plt.show()
+save_or_show(plt.gcf(), "artifacts/sh_pddlvm_train.png", show=SHOW)
 
 ##########################
 # 5) Obtain numeric reference from sh_spectral
+print("WARNING: steady PDDLVM residual vs transient spectral snapshot -- "
+      "different physics; comparison is a sanity check only.")
 ##########################
 psi_final, psi_hist, psi_at_snap = swift_hohenberg_2d_etdrk2(
     Nx=Nx,
@@ -335,4 +346,4 @@ ax[1].set_title(f"PDDLVM mean psi at t={used_time} (pretend PDE residual)")
 plt.colorbar(im1, ax=ax[1], label="psi(x,y)")
 
 plt.tight_layout()
-plt.show()
+save_or_show(plt.gcf(), "artifacts/sh_pddlvm_compare.png", show=SHOW)

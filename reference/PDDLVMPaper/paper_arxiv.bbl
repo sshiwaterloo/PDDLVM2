@@ -1,0 +1,484 @@
+\begin{thebibliography}{10}
+
+\bibitem{akyildiz2022statistical}
+{\"O}.~D. Akyildiz, C.~Duffin, S.~Sabanis, and M.~Girolami.
+\newblock Statistical finite elements via {L}angevin dynamics.
+\newblock {\em SIAM/ASA Journal of Uncertainty Quantification}, 2022.
+
+\bibitem{anandkumar2020neural}
+A.~Anandkumar, K.~Azizzadenesheli, K.~Bhattacharya, N.~Kovachki, Z.~Li, B.~Liu,
+  and A.~Stuart.
+\newblock Neural operator: Graph kernel network for partial differential
+  equations.
+\newblock In {\em ICLR 2020 Workshop on Integration of Deep Neural Models and
+  Differential Equations}, 2020.
+
+\bibitem{ardizzone2018analyzing}
+L.~Ardizzone, J.~Kruse, S.~Wirkert, D.~Rahner, E.~W. Pellegrini, R.~S. Klessen,
+  L.~Maier-Hein, C.~Rother, and U.~K{\"o}the.
+\newblock Analyzing inverse problems with invertible neural networks.
+\newblock {\em arXiv preprint arXiv:1808.04730}, 2018.
+
+\bibitem{arridge_maass_oktem_schonlieb_2019}
+S.~Arridge, P.~Maass, O.~Öktem, and C.-B. Schönlieb.
+\newblock Solving inverse problems using data-driven models.
+\newblock {\em Acta Numerica}, 28:1–174, 2019.
+
+\bibitem{bhattacharya2020model}
+K.~Bhattacharya, B.~Hosseini, N.~B. Kovachki, and A.~M. Stuart.
+\newblock Model {Reduction} {And} {Neural} {Networks} {For} {Parametric}
+  {PDEs}.
+\newblock {\em The SMAI Journal of Computational Mathematics}, 7:121--157,
+  2021.
+
+\bibitem{Bishop2006}
+C.~M. Bishop.
+\newblock {\em Pattern Recognition and Machine Learning}.
+\newblock Springer-Verlag New York, Inc., Secaucus, NJ, USA, 2006.
+
+\bibitem{brenner2008mathematical}
+S.~C. Brenner and L.~R. Scott.
+\newblock {\em The mathematical theory of finite element methods}, volume~3.
+\newblock Springer, 2008.
+
+\bibitem{brunton2016discovering}
+S.~L. Brunton, J.~L. Proctor, and J.~N. Kutz.
+\newblock Discovering governing equations from data by sparse identification of
+  nonlinear dynamical systems.
+\newblock {\em Proceedings of the National Academy of Sciences},
+  113(15):3932--3937, 2016.
+
+\bibitem{cai2022physics}
+S.~Cai, Z.~Mao, Z.~Wang, M.~Yin, and G.~E. Karniadakis.
+\newblock Physics-informed neural networks ({PINN}s) for fluid mechanics: A
+  review.
+\newblock {\em Acta Mechanica Sinica}, pages 1--12, 2022.
+
+\bibitem{chakraverty2019advanced}
+S.~Chakraverty, N.~Mahato, P.~Karunakar, and T.~D. Rao.
+\newblock {\em Advanced numerical and semi-analytical methods for differential
+  equations}.
+\newblock John Wiley \& Sons, 2019.
+
+\bibitem{chiu2022can}
+P.-H. Chiu, J.~C. Wong, C.~Ooi, M.~H. Dao, and Y.-S. Ong.
+\newblock {CAN}-{PINN}: A fast physics-informed neural network based on
+  coupled-automatic--numerical differentiation method.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  395:114909, 2022.
+
+\bibitem{cirak2011subdivision}
+F.~Cirak and Q.~Long.
+\newblock Subdivision shells with exact boundary control and non-manifold
+  geometry.
+\newblock {\em International Journal for Numerical Methods in Engineering},
+  88(9):897--923, 2011.
+
+\bibitem{cirak2000subdivision}
+F.~Cirak, M.~Ortiz, and P.~Schr{\"o}der.
+\newblock Subdivision surfaces: a new paradigm for thin-shell finite-element
+  analysis.
+\newblock {\em International Journal for Numerical Methods in Engineering},
+  47(12):2039--2072, 2000.
+
+\bibitem{cockayne2019bayesian}
+J.~Cockayne, C.~J. Oates, T.~J. Sullivan, and M.~Girolami.
+\newblock Bayesian probabilistic numerical methods.
+\newblock {\em SIAM {R}eview}, 61(4):756--789, 2019.
+
+\bibitem{dehaene2021re}
+D.~Dehaene and R.~Brossard.
+\newblock Re-parameterizing vaes for stability.
+\newblock {\em arXiv preprint arXiv:2106.13739}, 2021.
+
+\bibitem{duffin2021statistical}
+C.~Duffin, E.~Cripps, T.~Stemler, and M.~Girolami.
+\newblock Statistical finite elements for misspecified models.
+\newblock {\em Proceedings of the National Academy of Sciences}, 118(2), 2021.
+
+\bibitem{ern2004theory}
+A.~Ern and J.-L. Guermond.
+\newblock {\em Theory and practice of finite elements}, volume 159.
+\newblock Springer, 2004.
+
+\bibitem{eymard2000finite}
+R.~Eymard, T.~Gallou{\"e}t, and R.~Herbin.
+\newblock Finite volume methods.
+\newblock {\em Handbook of numerical analysis}, 7:713--1018, 2000.
+
+\bibitem{febrianto2022digital}
+E.~Febrianto, L.~Butler, M.~Girolami, and F.~Cirak.
+\newblock Digital twinning of self-sensing structures using the statistical
+  finite element method.
+\newblock {\em Data-Centric Engineering}, 3:e31, 2022.
+
+\bibitem{finlayson2013method}
+B.~A. Finlayson.
+\newblock {\em The method of weighted residuals and variational principles}.
+\newblock SIAM, 2013.
+
+\bibitem{finlayson1966method}
+B.~A. Finlayson and L.~E. Scriven.
+\newblock The method of weighted residuals—a review.
+\newblock {\em Applied Mechanics Review}, 19(9):735--748, 1966.
+
+\bibitem{gao2022physics}
+H.~Gao, M.~J. Zahr, and J.-X. Wang.
+\newblock Physics-informed graph neural {G}alerkin networks: A unified
+  framework for solving {PDE}-governed forward and inverse problems.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  390:114502, 2022.
+
+\bibitem{gerald2004applied}
+C.~Gerald and P.~Wheatley.
+\newblock {\em Applied Numerical Analysis}.
+\newblock Featured Titles for Numerical Analysis. Pearson/Addison-Wesley, 2004.
+
+\bibitem{ghattas2021learning}
+O.~Ghattas and K.~Willcox.
+\newblock Learning physics-based models from data: perspectives from inverse
+  problems and model reduction.
+\newblock {\em Acta Numerica}, 30:445--554, 2021.
+
+\bibitem{gibson2021method}
+W.~C. Gibson.
+\newblock {\em The method of moments in electromagnetics}.
+\newblock Chapman and Hall/CRC, 2021.
+
+\bibitem{girolami2021statistical}
+M.~Girolami, E.~Febrianto, G.~Yin, and F.~Cirak.
+\newblock The statistical finite element method (stat{FEM}) for coherent
+  synthesis of observation data and model predictions.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  375:113533, 2021.
+
+\bibitem{grote1997parallel}
+M.~J. Grote and T.~Huckle.
+\newblock Parallel preconditioning with sparse approximate inverses.
+\newblock {\em SIAM Journal on Scientific Computing}, 18(3):838--853, 1997.
+
+\bibitem{guo2022normalizing}
+L.~Guo, H.~Wu, and T.~Zhou.
+\newblock Normalizing field flows: Solving forward and inverse stochastic
+  differential equations using physics-informed flow models.
+\newblock {\em Journal of Computational Physics}, 461:111202, 2022.
+
+\bibitem{Han2017solving}
+J.~Han, A.~Jentzen, and W.~Ee.
+\newblock Solving high-dimensional partial differential equations using deep
+  learning.
+\newblock {\em Proceedings of the National Academy of Sciences}, 115, 07 2017.
+
+\bibitem{hatami2017weighted}
+M.~Hatami.
+\newblock {\em Weighted residual methods: principles, modifications and
+  applications}.
+\newblock Academic Press, 2017.
+
+\bibitem{jacobsen2022disentangling}
+C.~Jacobsen and K.~Duraisamy.
+\newblock Disentangling generative factors of physical fields using variational
+  autoencoders.
+\newblock {\em Frontiers in Physics}, 10, 2022.
+
+\bibitem{kaltenbach2020incorporating}
+S.~Kaltenbach and P.-S. Koutsourelakis.
+\newblock Incorporating physical constraints in a deep probabilistic machine
+  learning framework for coarse-graining dynamical systems.
+\newblock {\em Journal of Computational Physics}, 419:109673, 2020.
+
+\bibitem{karniadakis2021physics}
+G.~E. Karniadakis, I.~G. Kevrekidis, L.~Lu, P.~Perdikaris, S.~Wang, and
+  L.~Yang.
+\newblock Physics-informed machine learning.
+\newblock {\em Nature Reviews Physics}, 3(6):422--440, 2021.
+
+\bibitem{kim2019deep}
+B.~Kim, V.~C. Azevedo, N.~Thuerey, T.~Kim, M.~Gross, and B.~Solenthaler.
+\newblock Deep fluids: A generative network for parameterized fluid
+  simulations.
+\newblock In {\em Computer Graphics Forum}, volume~38, pages 59--70. Wiley
+  Online Library, 2019.
+
+\bibitem{kingma2015adam}
+D.~P. Kingma and J.~Ba.
+\newblock Adam: A method for stochastic optimization.
+\newblock {\em International Conference on Learning Representations (ICLR)},
+  2015.
+
+\bibitem{kingma2013auto}
+D.~P. Kingma and M.~Welling.
+\newblock Auto-encoding variational {B}ayes.
+\newblock {\em nternational Conference on Learning Representations ({ICLR})
+  2014}, 2014.
+
+\bibitem{kingma2019introduction}
+D.~P. Kingma and M.~Welling.
+\newblock An introduction to variational autoencoders.
+\newblock {\em Foundations and Trends in Machine Learning}, 12(4):307--392,
+  2019.
+
+\bibitem{kovachki2023neural}
+N.~Kovachki, Z.~Li, B.~Liu, K.~Azizzadenesheli, K.~Bhattacharya, A.~Stuart, and
+  A.~Anandkumar.
+\newblock Neural operator: Learning maps between function spaces with
+  applications to pdes.
+\newblock {\em Journal of Machine Learning Research}, 24(89):1--97, 2023.
+
+\bibitem{kropfl2022operator}
+F.~Kr{\"o}pfl, R.~Maier, and D.~Peterseim.
+\newblock Operator compression with deep neural networks.
+\newblock {\em Advances in Continuous and Discrete Models}, 2022(1):1--23,
+  2022.
+
+\bibitem{li2020fourier}
+Z.~Li, N.~Kovachki, K.~Azizzadenesheli, B.~Liu, K.~Bhattacharya, A.~Stuart, and
+  A.~Anandkumar.
+\newblock Fourier neural operator for parametric partial differential
+  equations.
+\newblock {\em arXiv preprint arXiv:2010.08895}, 2020.
+
+\bibitem{lind2020review}
+S.~J. Lind, B.~D. Rogers, and P.~K. Stansby.
+\newblock Review of smoothed particle hydrodynamics: towards converged
+  lagrangian flow modelling.
+\newblock {\em Proceedings of the Royal Society A}, 476(2241):20190801, 2020.
+
+\bibitem{lindgren2009weighted}
+L.-E. Lindgren.
+\newblock From weighted residual methods to finite element methods, 2009.
+
+\bibitem{lu2021learning}
+L.~Lu, P.~Jin, G.~Pang, Z.~Zhang, and G.~E. Karniadakis.
+\newblock Learning nonlinear operators via {D}eep{ON}et based on the universal
+  approximation theorem of operators.
+\newblock {\em Nature Machine Intelligence}, 3(3):218--229, 2021.
+
+\bibitem{lu2021physics}
+L.~Lu, R.~Pestourie, W.~Yao, Z.~Wang, F.~Verdugo, and S.~G. Johnson.
+\newblock Physics-informed neural networks with hard constraints for inverse
+  design.
+\newblock {\em SIAM Journal on Scientific Computing}, 43(6):B1105--B1132, 2021.
+
+\bibitem{mao2020physics}
+Z.~Mao, A.~D. Jagtap, and G.~E. Karniadakis.
+\newblock Physics-informed neural networks for high-speed flows.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  360:112789, 2020.
+
+\bibitem{o2019learning}
+D.~O’Malley, J.~K. Golden, and V.~V. Vesselinov.
+\newblock Learning to regularize with a variational autoencoder for hydrologic
+  inverse analysis.
+\newblock {\em UMBC Faculty Collection}, 2019.
+
+\bibitem{pang2019fpinns}
+G.~Pang, L.~Lu, and G.~E. Karniadakis.
+\newblock {fPINNs}: Fractional physics-informed neural networks.
+\newblock {\em SIAM Journal on Scientific Computing}, 41(4):A2603--A2626, 2019.
+
+\bibitem{patel2021physics}
+R.~G. Patel, N.~A. Trask, M.~A. Wood, and E.~C. Cyr.
+\newblock A physics-informed operator regression framework for extracting
+  data-driven continuum models.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  373:113500, 2021.
+
+\bibitem{povala2022variational}
+J.~Povala, I.~Kazlauskaite, E.~Febrianto, F.~Cirak, and M.~Girolami.
+\newblock Variational {B}ayesian approximation of inverse problems using sparse
+  precision matrices.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  393:114712, 2022.
+
+\bibitem{qian2021integrating}
+Z.~Qian, W.~Zame, L.~Fleuren, P.~Elbers, and M.~van~der Schaar.
+\newblock Integrating expert {ODE}s into neural {ODE}s: Pharmacology and
+  disease progression.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:11364--11383, 2021.
+
+\bibitem{quarteroni2008numerical}
+A.~Quarteroni and A.~Valli.
+\newblock {\em Numerical approximation of partial differential equations}.
+\newblock Springer, 2008.
+
+\bibitem{raissi2018hidden}
+M.~Raissi and G.~E. Karniadakis.
+\newblock Hidden physics models: Machine learning of nonlinear partial
+  differential equations.
+\newblock {\em Journal of Computational Physics}, 357:125--141, 2018.
+
+\bibitem{raissi2019physics}
+M.~Raissi, P.~Perdikaris, and G.~E. Karniadakis.
+\newblock Physics-informed neural networks: A deep learning framework for
+  solving forward and inverse problems involving nonlinear partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 378:686--707, 2019.
+
+\bibitem{ramachandran2017searching}
+P.~Ramachandran, B.~Zoph, and Q.~V. Le.
+\newblock Searching for activation functions.
+\newblock {\em arXiv preprint arXiv:1710.05941}, 2017.
+
+\bibitem{Raveendran2014Blending}
+K.~Raveendran, C.~Wojtan, N.~Thuerey, and G.~Turk.
+\newblock Blending liquids.
+\newblock {\em ACM Transactions on Graphics}, 33(4), 2014.
+
+\bibitem{rixner2021probabilistic}
+M.~Rixner and P.-S. Koutsourelakis.
+\newblock A probabilistic generative model for semi-supervised training of
+  coarse-grained surrogates and enforcing physical constraints through virtual
+  observables.
+\newblock {\em Journal of Computational Physics}, 434:110218, 2021.
+
+\bibitem{Ruberg:2011aa}
+T.~R\"uberg and F.~Cirak.
+\newblock Subdivision-stabilised immersed b-spline finite elements for moving
+  boundary flows.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  209--212:266--283, 2012.
+
+\bibitem{Sirignano2018DGM}
+J.~Sirignano and K.~Spiliopoulos.
+\newblock {DGM}: A deep learning algorithm for solving partial differential
+  equations.
+\newblock {\em Journal of Computational Physics}, 375:1339--1364, 2018.
+
+\bibitem{strang1986introduction}
+G.~Strang.
+\newblock {\em Introduction to Applied Mathematics}.
+\newblock Wellesley-Cambridge Press, 1986.
+
+\bibitem{strikwerda2004finite}
+J.~C. Strikwerda.
+\newblock {\em Finite difference schemes and partial differential equations}.
+\newblock SIAM, 2004.
+
+\bibitem{stuart_2010}
+A.~M. Stuart.
+\newblock Inverse problems: A {B}ayesian perspective.
+\newblock {\em Acta Numerica}, 19:451–559, 2010.
+
+\bibitem{tait2020variational}
+D.~J. Tait and T.~Damoulas.
+\newblock Variational autoencoding of {PDE} inverse problems.
+\newblock {\em arXiv preprint arXiv:2006.15641}, 2020.
+
+\bibitem{takeishi2021physics}
+N.~Takeishi and A.~Kalousis.
+\newblock Physics-integrated variational autoencoders for robust and
+  interpretable generative modeling.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:14809--14821, 2021.
+
+\bibitem{tarantola2005inverse}
+A.~Tarantola.
+\newblock {\em Inverse problem theory and methods for model parameter
+  estimation}.
+\newblock SIAM, 2005.
+
+\bibitem{tripura2022wavelet}
+T.~Tripura and S.~Chakraborty.
+\newblock Wavelet neural operator for solving parametric partial differential
+  equations in computational mechanics problems.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering}, 404,
+  2023.
+
+\bibitem{vadeboncoeur2023random}
+A.~Vadeboncoeur, I.~Kazlauskaite, Y.~Papandreou, F.~Cirak, M.~Girolami, and
+  {\"O}.~D. Akyildiz.
+\newblock Random grid neural processes for parametric partial differential
+  equations.
+\newblock {\em arXiv preprint arXiv:2301.11040}, 2023.
+
+\bibitem{vogel2002computational}
+C.~R. Vogel.
+\newblock {\em Computational Methods for Inverse Problems}.
+\newblock Frontiers in Applied Mathematics. Society for Industrial and Applied
+  Mathematics, 2002.
+
+\bibitem{wan2000unscented}
+E.~A. Wan and R.~Van Der~Merwe.
+\newblock The unscented {K}alman filter for nonlinear estimation.
+\newblock In {\em Proceedings of the IEEE 2000 Adaptive Systems for Signal
+  Processing, Communications, and Control Symposium}, pages 153--158. IEEE,
+  2000.
+
+\bibitem{wang2020towards}
+R.~Wang, K.~Kashinath, M.~Mustafa, A.~Albert, and R.~Yu.
+\newblock Towards physics-informed deep learning for turbulent flow prediction.
+\newblock In {\em Proceedings of the 26th ACM SIGKDD International Conference
+  on Knowledge Discovery \& Data Mining}, pages 1457--1466, 2020.
+
+\bibitem{wang2021understanding}
+S.~Wang, Y.~Teng, and P.~Perdikaris.
+\newblock Understanding and mitigating gradient flow pathologies in
+  physics-informed neural networks.
+\newblock {\em SIAM Journal on Scientific Computing}, 43(5):A3055--A3081, 2021.
+
+\bibitem{wang2021learning}
+S.~Wang, H.~Wang, and P.~Perdikaris.
+\newblock Learning the solution operator of parametric partial differential
+  equations with physics-informed {D}eep{ON}ets.
+\newblock {\em Science advances}, 7(40), 2021.
+
+\bibitem{winovich2019convpde}
+N.~Winovich, K.~Ramani, and G.~Lin.
+\newblock Conv{PDE-UQ}: Convolutional neural networks with quantified
+  uncertainty for heterogeneous elliptic partial differential equations on
+  varied domains.
+\newblock {\em Journal of Computational Physics}, 394:263--279, 2019.
+
+\bibitem{yang2019adversarial}
+Y.~Yang and P.~Perdikaris.
+\newblock Adversarial uncertainty quantification in physics-informed neural
+  networks.
+\newblock {\em Journal of Computational Physics}, 394:136--152, 2019.
+
+\bibitem{yang2019conditional}
+Y.~Yang and P.~Perdikaris.
+\newblock Conditional deep surrogate models for stochastic, high-dimensional,
+  and multi-fidelity systems.
+\newblock {\em Computational Mechanics}, 64(2):417--434, 2019.
+
+\bibitem{Yin2022Interfacing}
+M.~Yin, E.~Zhang, Y.~Yu, and G.~E. Karniadakis.
+\newblock Interfacing finite elements with deep neural operators for fast
+  multiscale modeling of mechanics problems.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering}, page
+  115027, 2022.
+
+\bibitem{zhang2018subdivision}
+Q.~Zhang, M.~Sabin, and F.~Cirak.
+\newblock Subdivision surfaces with isogeometric analysis adapted refinement
+  weights.
+\newblock {\em Computer-Aided Design}, 102:104--114, 2018.
+
+\bibitem{zhao2022learning}
+Q.~Zhao, D.~B. Lindell, and G.~Wetzstein.
+\newblock Learning to solve pde-constrained inverse problems with graph
+  networks.
+\newblock In {\em ICML 2022 2nd AI for Science Workshop}.
+
+\bibitem{zhong2023pi}
+W.~Zhong and H.~Meidani.
+\newblock Pi-vae: Physics-informed variational auto-encoder for stochastic
+  differential equations.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering},
+  403:115664, 2023.
+
+\bibitem{zhu2018bayesian}
+Y.~Zhu and N.~Zabaras.
+\newblock Bayesian deep convolutional encoder--decoder networks for surrogate
+  modeling and uncertainty quantification.
+\newblock {\em Journal of Computational Physics}, 366:415--447, 2018.
+
+\bibitem{zhu2019physics}
+Y.~Zhu, N.~Zabaras, P.-S. Koutsourelakis, and P.~Perdikaris.
+\newblock Physics-constrained deep learning for high-dimensional surrogate
+  modeling and uncertainty quantification without labeled data.
+\newblock {\em Journal of Computational Physics}, 394:56--81, 2019.
+
+\end{thebibliography}

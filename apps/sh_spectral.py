@@ -1,6 +1,8 @@
+import _bootstrap  # noqa: F401  (repo root on sys.path)
 import numpy as np
 np.random.seed(2025)
 import matplotlib.pyplot as plt
+from pddlvm.plotting import save_or_show, show_requested
 
 def swift_hohenberg_2d_etdrk2(
     Nx=128,
@@ -196,7 +198,8 @@ if __name__ == "__main__":
     plt.title('2D Swift-Hohenberg (Final Field)')
     plt.xlabel('x')
     plt.ylabel('y')
-    plt.show()
+    save_or_show(plt.gcf(), "artifacts/sh_spectral_final.png",
+                 show=show_requested())
 
     # If we got a valid snapshot, we can also visualize that
     if psi_at_3 is not None:
@@ -206,4 +209,5 @@ if __name__ == "__main__":
         plt.title('Field at t = 3.0')
         plt.xlabel('x')
         plt.ylabel('y')
-        plt.show()
+        save_or_show(plt.gcf(), "artifacts/sh_spectral_t3.png",
+                     show=show_requested())

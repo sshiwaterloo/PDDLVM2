@@ -3,6 +3,8 @@
 # A pseudo-spectral solver for 2D Navier–Stokes in vorticity form on [0,1]^2, periodic BC.
 # Allow to specify a time snapshot t_snap (<= tmax), so we return w(x,y,t_snap) and u(x,y,t_snap).
 
+import _bootstrap  # noqa: F401  (repo root on sys.path)
+
 import numpy as np
 
 def ns_spectral_solve(nx=32, ny=32, nu=0.01, tmax=1.0, dt=0.001,
@@ -124,4 +126,6 @@ if __name__=="__main__":
     plt.contourf(w_final, 50, cmap='jet')
     plt.colorbar()
     plt.title(f"ns_spectral test run w(x,y) at t={t_snap}")
-    plt.show()
+    from pddlvm.plotting import save_or_show, show_requested
+    save_or_show(plt.gcf(), "artifacts/ns_spectral.png",
+                 show=show_requested())

@@ -1,12 +1,23 @@
 
-from operator import gt
-from turtle import shape
+import logging
+import warnings
 
-from numpy import gradient
 from .utilities import *
+from .numerics import fem as _fem
 from scipy import optimize
 
+_logger = logging.getLogger(__name__)
+
+
 class Solver():
+    """1D finite-element solver for -d/dx(kappa du/dx) = f.
+
+    Assembly is delegated to ``pddlvm.numerics.fem`` (single-scatter
+    vectorized ops, no per-element Python loop).  The legacy scalar
+    ``stress_strain_*`` hooks are retained for API compatibility; the
+    assembly path uses the equivalent vectorized law selected by
+    ``isNonLinear``.
+    """
 
     def __init__(self, pdeState, xFE, isNonLinear = False):
         self.xFE       = xFE
@@ -18,7 +29,7 @@ class Solver():
 
         self.elmCent = tffloat(self.xFE[:-1] + np.diff(self.xFE) / 2.)
         self.xEFh    = tffloat( np.diff(self.xFE) )
-        print('xEFh = \n', self.xEFh)
+        _logger.debug('xEFh = %s', self.xEFh.numpy())
 
         self.linElmMat      = tf.constant( [ [1., -1.], [-1., 1.] ], dtype=floatf )
         self.linElmMatRavel = tf.constant( [ 1., -1., -1., 1. ], dtype=floatf )
@@ -26,6 +37,9 @@ class Solver():
 
         
         self.isNonLinear =  isNonLinear 
+        # NOTE: assembly no longer calls self.stress_strain; the equivalent
+        # vectorized law is applied in assemble_tf_internal.  The scalar
+        # hooks below are kept for API compatibility.
         if self.isNonLinear == False:
             self.stress_strain = self.stress_strain_linear
             self.solve_tf      = self.solve_tf_linear
@@ -54,7 +68,6 @@ class Solver():
         return dudx * kappa + 2.
     
     def stress_strain_nonLinear(self, index, kappa, u_trial):
-        #print('using NONlinear stress-strain')
         dudx = ( u_trial[index] - u_trial[index+1]) / (self.xFE[index] - self.xFE[index+1])
         return (tf.keras.activations.sigmoid(tf.math.abs(dudx)) + kappa*5. ) /10.
 
@@ -66,47 +79,27 @@ class Solver():
             
     
     def assemble_tf_internal(self, u : tf.Tensor):
+        """Vectorized assembly of (A, f) with Dirichlet elimination.
 
-        kappaVect    = self.pdeState.kappa_funCXFE()
-        forcingVect  = self.pdeState.forcing_funXFE()
-        aMat         = tf.constant(0., shape=[ self.numFElems+1, self.numFElems+1 ], dtype=floatf )
-        fVec         = tf.constant(0., shape=[self.numFElems+1], dtype=floatf ) 
+        Equivalent to the legacy per-element loop: stiffness uses the
+        element-center diffusivity (midpoint rule), the load vector is the
+        consistent linear-element integral, and boundary conditions are
+        eliminated at both ends (see pddlvm.numerics.fem).
+        """
+        kappaVect   = self.pdeState.kappa_funCXFE()
+        forcingVect = self.pdeState.forcing_funXFE()
 
-        for e in range( self.numFElems ):
-            
-            hFE    = self.xEFh[e]
-            kappaE = kappaVect[e]
-            stiffness_of_kappa = self.stress_strain( e, kappaE, u )
-            aMat   = tf.tensor_scatter_nd_add(aMat, [[e,e],[e,e+1],[e+1,e],[e+1,e+1]], stiffness_of_kappa * 1. / hFE * self.linElmMatRavel )
+        if self.isNonLinear:
+            # vectorized legacy law: (sigmoid(|du/dx|) + kappa*5) / 10
+            dudx = (u[1:] - u[:-1]) / self.xEFh
+            kEff = (tf.keras.activations.sigmoid(tf.math.abs(dudx))
+                    + kappaVect * 5.) / 10.
+        else:
+            kEff = kappaVect
 
-        # save the column corresponding to the right BC
-        aMat_rightBC_col = tf.identity( aMat[:, self.numFElems]  )
-
-        # assemble forcing vector
-        for e in range( self.numFElems ):
-            fL = forcingVect[ e ] 
-            fR = forcingVect[ e + 1 ] 
-
-            fVec = tf.tensor_scatter_nd_add(fVec, [[e]],      [ self.xEFh[e]   * ( 1./3. * fL + 1./6. * fR ) ] )
-            fVec = tf.tensor_scatter_nd_add(fVec, [[e + 1]],  [ self.xEFh[e] * ( 1./6. * fL + 1./3. * fR ) ] )
-
-            # enforce boundary conditions
-            uL, uR = self.pdeState.dirichlet_fun( )    
-
-            fVec -= uL * aMat[ : , 0 ] 
-            fVec -= uR * aMat[ : , self.numFElems ] 
-
-            fVec = tf.tensor_scatter_nd_update(fVec, [[0]], [uL] )
-            fVec = tf.tensor_scatter_nd_update(fVec, [[self.numFElems]], [uR] )
-
-            aMat = tf.tensor_scatter_nd_update(aMat, [[0]], [self.zeroColumn])
-            aMat = tf.tensor_scatter_nd_update(aMat, [[self.numFElems]], [self.zeroColumn])
-            aMat = tf.transpose( tf.tensor_scatter_nd_update(tf.transpose(aMat), [[0]], [self.zeroColumn])  )
-            aMat = tf.transpose( tf.tensor_scatter_nd_update(tf.transpose(aMat), [[self.numFElems]], [self.zeroColumn])  )
-            aMat = tf.tensor_scatter_nd_update(aMat, [[0,0]], [tffloat(1.)])
-            aMat = tf.tensor_scatter_nd_update(aMat, [[self.numFElems, self.numFElems]], [tffloat(1.)])
-
-        return aMat, fVec
+        uL, uR = self.pdeState.dirichlet_fun()
+        return _fem.assemble_poisson_1d(self.xFE, kEff, forcingVect,
+                                        uL, uR, dtype=floatf)
 
     def assemble_tf(self, u):
         self.u_trial = u
@@ -121,7 +114,9 @@ class Solver():
 
     def solve_tf_linear(self, u=None):
         if self.isNonLinear == True:
-            print('WARNING: PDE is NON-LINEAR -- THIS IS A LINEAR SOLVE METHOD')
+            warnings.warn(
+                'PDE is NON-LINEAR -- solve_tf_linear is a LINEAR solve method',
+                UserWarning, stacklevel=2)
         aMat, fVec = self.assemble_tf_internal( self.u_trial )
         u = tf.linalg.solve(aMat, fVec[:,None])
         return tf.squeeze(u)
@@ -227,7 +222,6 @@ class Solver():
         uFE = tf.squeeze(self.pdeState.u_funXFE( uc_trial[:,None] ))
         A, f = self.assemble_tf( uFE )
         residual = A @ uFE[:,None] - f[:,None]
-        print(residual)
         return tf.squeeze(residual)
 
     def residualVect_FEspectral_coeffSpace(self, uc):
@@ -247,7 +241,6 @@ class Solver():
             tape.watch(uc_trial)
             residual = self.residualVect_FEspectral(uc_trial)
         jac = tape.jacobian(residual, uc_trial)
-        #print('jac =', jac )
         return jac
     
     def solve_tf_nonLinear_lsq_spectral(self, u_c=None):
@@ -264,6 +257,8 @@ class Solver():
 
         
 if __name__ == '__main__':
+
+    import matplotlib.pyplot as plt
 
     #================= Test for Solver =========================
     from pddlvm.poisson1DPDEState import PDE_State

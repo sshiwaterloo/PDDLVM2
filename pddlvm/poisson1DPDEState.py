@@ -1,6 +1,7 @@
 
 from .utilities import *
 from .utilities import _PI
+from .numerics.chebyshev import cheb_T_mat, cheb_eval
 
 class PDE_State:
     
@@ -34,7 +35,6 @@ class PDE_State:
 
         self.elmCent  = tffloat(self.xFE[:-1] + np.diff(self.xFE) / 2.)
         epsiCorr      = tffloat(tf.concat([[1e-1], tf.constant(0.,shape=[self.xFE.shape[0]-2]), [-1e-1]], 0) )
-        print(self.xFE+epsiCorr)
         #self.wMesh    = 1./tfm.sqrt(1. - (self.xFE+epsiCorr)**2)
         self.wMesh    = 1./tfm.sqrt(1. - (self.xFE)**2)
         self.deltaXFE = tffloat(np.diff(self.xFE))
@@ -74,18 +74,15 @@ class PDE_State:
 
     def genChebyFun(self, a, x):
         '''a is [dimCoeffs, numFunc], x is [numPoints]
-        returns cheby of function a coeffs on given x as [f_1(x), f_2(x), ..,] 
+        returns cheby of function a coeffs on given x as [f_1(x), f_2(x), ..,]
         '''
-        TMat = self.genChebyT(a.shape[0], x)
-        return tf.matmul(TMat, a, transpose_a=True)
-    
+        return cheb_eval(a, x, dtype=floatf)
+
     def genChebyT(self, n ,x):
         '''n is numCoeffs, x is [numPoints]
         returns cheby T on location x
         '''
-        def bind(n): return self.trigCheb(x, n)
-        TMat = tf.vectorized_map( bind, tf.range(0, n, dtype=floatf) )
-        return TMat
+        return cheb_T_mat(n, x, dtype=floatf)
     
     def TOnMesh(self, dim):
         return tf.vectorized_map( self.xFEChebyBind, tf.range(0, dim, dtype=floatf) )
@@ -95,7 +92,6 @@ class PDE_State:
             funcOnMesh must be [numNodes] -- TMat is [dimU, numNoes]
             return coeffs [dimU, 1]
         '''
-        print(self.TXFEMatU, funcOnMesh, self.wMesh)
         a = 2. /_PI * tf.math.reduce_sum(self.TXFEMatU * funcOnMesh * self.wMesh , axis=1, keepdims=True) * (self.xFE[-1] - self.xFE[0])/self.xFE.shape[0]
         OneOver2Elm0 = tf.concat([[0.5], tf.constant(1., shape=[self.dimU-1])], 0)[:,None]
         return a * OneOver2Elm0

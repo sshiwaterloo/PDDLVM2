@@ -10,7 +10,7 @@ The tests include verification of:
 import unittest
 import numpy as np
 import tensorflow as tf
-from NeuralNet import NeuralN
+from pddlvm.NeuralNet import NeuralN
 
 class TestNeuralN(unittest.TestCase):
     """
@@ -96,6 +96,18 @@ class TestNeuralN(unittest.TestCase):
 
         self.assertEqual(mean.shape, (5, 3), "Mean shape mismatch for concatenated input")
         self.assertEqual(logvar.shape, (5, 3), "Logvar shape mismatch for concatenated input")
+
+
+    def test_init_seed_reproducible(self):
+        """Same init_seed -> identical initial weights (needed for
+        reproducible experiments: unseeded keras initializers are not
+        reproducible across constructions)."""
+        m1 = NeuralN("s1", np.array([3, 10, 4]), init_seed=7)
+        m2 = NeuralN("s2", np.array([3, 10, 4]), init_seed=7)
+        self.assertEqual(len(m1.trainable_variables),
+                         len(m2.trainable_variables))
+        for w1, w2 in zip(m1.trainable_variables, m2.trainable_variables):
+            np.testing.assert_array_equal(w1.numpy(), w2.numpy())
 
 
 if __name__ == "__main__":
